@@ -160,7 +160,7 @@ async def enrich_parse_result(result: ParseResult) -> ParseResult:
     """
     Enrich a ParseResult with canonical metadata from TVMaze (TV) or TMDB (movies).
 
-    - TV shows: TVMaze is queried unconditionally — free, no key needed.
+    - TV shows: TVMaze is queried only when SxxExx appears in the raw filename.
     - Movies:   TMDB is queried only when TMDB_API_KEY is set in the environment.
     - Any network failure or missing result leaves the original unchanged.
     """
@@ -169,7 +169,11 @@ async def enrich_parse_result(result: ParseResult) -> ParseResult:
 
     meta: dict | None = None
     if result.media_type == MediaType.episode:
-        meta = await _metadata.lookup_show(result.title)
+        # Only call TVMaze when there is an unambiguous SxxExx marker in the raw
+        # filename.  Without this guard, guessit false-positives (e.g. "Gladiator"
+        # misclassified as episode) would hit TVMaze and return a random TV show.
+        if _EPISODE_RE.search(result.raw_filename):
+            meta = await _metadata.lookup_show(result.title)
     elif result.media_type == MediaType.movie:
         meta = await _metadata.lookup_movie(result.title, result.year)
 

@@ -273,6 +273,23 @@ class TestEnrichParseResult:
         lookup.assert_not_called()
 
     @pytest.mark.anyio
+    async def test_skips_tvmaze_without_episode_marker(self, monkeypatch):
+        """
+        Gladiator-style false positive: guessit labels the file as an episode
+        but there is no SxxExx in the filename.  TVMaze must NOT be called.
+        """
+        from app.services import metadata, parser
+
+        lookup = AsyncMock()
+        monkeypatch.setattr(metadata, "lookup_show", lookup)
+
+        result = _episode_result(raw_filename="Gladiator.EXTENDED.2000.1080p.mkv")
+        enriched = await parser.enrich_parse_result(result)
+
+        assert enriched == result
+        lookup.assert_not_called()
+
+    @pytest.mark.anyio
     async def test_movie_enriched_via_tmdb(self, monkeypatch):
         from app.services import metadata, parser
 
