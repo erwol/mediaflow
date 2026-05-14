@@ -15,14 +15,12 @@ function extractBaseDirs(item: ParseResult): {
 } {
   const parts = item.destination.split("/").filter(Boolean);
   if (item.media_type === "movie") {
-    // destination = /<movies_dir>/<filename>
-    const moviesDir = "/" + parts.slice(0, -1).join("/");
-    // Guess tvshows dir by replacing terminal segment
+    // destination = /<movies_dir>/<Movie Folder>/<Movie File> — strip last 2 segments
+    const moviesDir = "/" + parts.slice(0, -2).join("/");
     const tvshowsDir =
       moviesDir.replace(/[/\\]movies$/i, "/tvshows") || "/home/pi/tvshows";
     return { moviesDir, tvshowsDir };
   } else {
-    // destination = /<tvshows_dir>/<title>/Season XX/<filename>
     const tvshowsDir = "/" + parts.slice(0, -3).join("/");
     const moviesDir =
       tvshowsDir.replace(/[/\\]tvshows$/i, "/movies") || "/home/pi/movies";
@@ -38,20 +36,42 @@ function buildDestination(
   tvshowsDir: string
 ): string {
   if (mediaType === "movie") {
-    return `${moviesDir}/${filename}`;
+    // Jellyfin: Film (Year)/Film (Year).mkv
+    const folder = filename.includes(".")
+      ? filename.slice(0, filename.lastIndexOf("."))
+      : filename;
+    return `${moviesDir}/${folder}/${filename}`;
   }
   const title = item.title ?? filename.replace(/\.[^.]+$/, "");
   const season = item.season ?? 1;
   return `${tvshowsDir}/${title}/Season ${String(season).padStart(2, "0")}/${filename}`;
 }
 
+/** Split a filename into stem and extension using the raw source filename. */
+function splitFilename(rawFilename: string): { ext: string } {
+  const lastDot = rawFilename.lastIndexOf(".");
+  return { ext: lastDot > 0 ? rawFilename.slice(lastDot) : "" };
+}
+
 export function UrlCard({ item, job, onDownload, isDownloading }: Props) {
   const { moviesDir, tvshowsDir } = useMemo(() => extractBaseDirs(item), [item]);
 
-  const [filename, setFilename] = useState(item.suggested_filename);
+  // Extension is fixed from the raw filename — never editable
+  const { ext } = useMemo(() => splitFilename(item.raw_filename), [item.raw_filename]);
+
+  // Stem is the suggested name minus its extension.
+  // Guard against ext="" edge case: slice(0, -0) returns "" in JS.
+  const initialStem =
+    ext.length > 0 && item.suggested_filename.endsWith(ext)
+      ? item.suggested_filename.slice(0, -ext.length)
+      : item.suggested_filename;
+
+  const [stem, setStem] = useState(initialStem);
   const [mediaType, setMediaType] = useState<MediaType>(item.media_type);
   const [destination, setDestination] = useState(item.destination);
   const [userEditedDest, setUserEditedDest] = useState(false);
+
+  const filename = stem + ext;
 
   useEffect(() => {
     if (!userEditedDest) {
@@ -76,12 +96,28 @@ export function UrlCard({ item, job, onDownload, isDownloading }: Props) {
       <div className="flex flex-col gap-3">
         <label className="flex flex-col gap-1">
           <span className="text-xs font-medium text-zinc-400">Filename</span>
-          <input
-            type="text"
-            value={filename}
-            onChange={(e) => setFilename(e.target.value)}
-            className="rounded-md border border-zinc-600 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <div className="flex rounded-md border border-zinc-600 bg-zinc-900 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
+            <input
+              type="text"
+              value={stem}
+              onChange={(e) => {
+                // Strip extension if the user accidentally types it into the stem
+                const val = e.target.value;
+                setStem(
+                  ext.length > 0 && val.toLowerCase().endsWith(ext.toLowerCase())
+                    ? val.slice(0, -ext.length)
+                    : val
+                );
+              }}
+              className="flex-1 min-w-0 bg-transparent px-3 py-2 text-sm text-zinc-100 focus:outline-none"
+            />
+            <span
+              title="Extension — not editable"
+              className="flex items-center px-3 text-sm text-zinc-500 bg-zinc-800 border-l border-zinc-700 select-none font-mono shrink-0 cursor-not-allowed"
+            >
+              {ext}
+            </span>
+          </div>
         </label>
 
         <label className="flex flex-col gap-1">

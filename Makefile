@@ -1,4 +1,4 @@
-.PHONY: help lint lint-backend lint-frontend typecheck format format-backend format-frontend dev prod build
+.PHONY: help lint lint-backend lint-frontend typecheck format format-backend format-frontend test dev prod build
 
 help:
 	@echo "Usage: make <target>"
@@ -10,6 +10,7 @@ help:
 	@echo "  format            Auto-format both backend (black) and frontend (prettier)"
 	@echo "  format-backend    black on backend/app/"
 	@echo "  format-frontend   prettier on frontend/src/"
+	@echo "  test              Run backend unit tests"
 	@echo "  dev               Start dev stack with hot-reload"
 	@echo "  prod              Start production stack"
 	@echo "  build             Build Docker images locally"
@@ -31,6 +32,9 @@ format-backend:
 
 format-frontend:
 	cd frontend && npm run format
+
+test:
+	python -m pytest -v
 
 dev:
 	docker compose up

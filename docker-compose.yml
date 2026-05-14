@@ -6,11 +6,11 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - ./backend/app:/app/app
-      - /home/pi/movies:/home/pi/movies
-      - /home/pi/tvshows:/home/pi/tvshows
+      - ${MOVIES_DIR}:${MOVIES_DIR}
+      - ${TVSHOWS_DIR}:${TVSHOWS_DIR}
     environment:
-      - MOVIES_DIR=/home/pi/movies
-      - TVSHOWS_DIR=/home/pi/tvshows
+      - MOVIES_DIR=${MOVIES_DIR}
+      - TVSHOWS_DIR=${TVSHOWS_DIR}
     ports:
       - "8000:8000"
 

@@ -3,16 +3,16 @@ services:
     image: ghcr.io/erwol/mediaflow-backend:latest
     restart: unless-stopped
     volumes:
-      - /home/pi/movies:/home/pi/movies
-      - /home/pi/tvshows:/home/pi/tvshows
+      - ${MOVIES_DIR}:${MOVIES_DIR}
+      - ${TVSHOWS_DIR}:${TVSHOWS_DIR}
     environment:
-      - MOVIES_DIR=/home/pi/movies
-      - TVSHOWS_DIR=/home/pi/tvshows
+      - MOVIES_DIR=${MOVIES_DIR}
+      - TVSHOWS_DIR=${TVSHOWS_DIR}
 
   frontend:
     image: ghcr.io/erwol/mediaflow-frontend:latest
     restart: unless-stopped
     ports:
-      - "3005:80"
+      - "${FRONTEND_PORT:-3005}:80"
     depends_on:
       - backend

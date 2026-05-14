@@ -45,8 +45,24 @@ jobs:
       - name: Format check frontend (prettier)
         run: cd frontend && npm run format:check
 
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        run: pip install -r backend/requirements-dev.txt
+
+      - name: Run tests
+        run: python -m pytest -v
+
   build:
-    needs: lint
+    needs: [lint, test]
     runs-on: ubuntu-latest
     permissions:
       contents: read
