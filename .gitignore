@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+*.local
+
+# Build output
+dist/
+build/
+
+# Vite / TypeScript
+.vite/
+*.tsbuildinfo
+
+# Test & coverage
+.coverage
+htmlcov/
+.pytest_cache/
+coverage/
+
+# Docker
+.dockerenv
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*~
+
+# Claude
+.claude/*
